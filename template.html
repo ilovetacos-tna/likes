@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checklist</title>
+<style>
+:root{--bg:#fafafa;--fg:#222;--muted:#777;--line:#e2e2e2;--card:#fff;
+--r0:#9a9a9a;--r1:#3b82f6;--r2:#22c55e;--r3:#eab308;--r4:#a855f7;--r5:#ef4444}
+@media (prefers-color-scheme:dark){:root{--bg:#18181a;--fg:#eee;--muted:#999;--line:#333;--card:#222}}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--fg)}
+header{padding:12px 16px;border-bottom:1px solid var(--line);max-width:900px;margin:0 auto}
+h1{margin:0 0 8px;font-size:22px}
+.bar{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+button,select,input{font:inherit;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:inherit}
+button{cursor:pointer}
+button.primary{background:var(--r1);border-color:var(--r1);color:#fff}
+#myName{width:24ch;max-width:100%}
+#legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;align-items:center}
+.legend-item{display:flex;align-items:center;gap:5px}
+#help{margin-top:10px;font-size:14px}
+#help summary{cursor:pointer;color:var(--r1)}
+#help ul{margin:6px 0;padding-left:20px}
+#help li{margin:3px 0}
+.note{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.4);border-radius:8px;padding:8px 12px;margin-top:10px}
+.linkbox{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+.linkbox .muted{font-size:13px}
+.linkbox button{flex:none;min-width:90px}
+.warn{color:var(--r5);font-size:13px;margin-top:8px}
+main,#compare{max-width:900px;margin:0 auto;padding:4px 16px 40px}
+details.cat{margin:16px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+details.cat>summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:8px;padding:8px 12px;background:rgba(127,127,127,.09)}
+details.cat>summary::-webkit-details-marker{display:none}
+details.cat>summary::before{content:"\25B8";display:inline-block;transition:transform .15s}
+details.cat[open]>summary::before{transform:rotate(90deg)}
+details.cat h2{margin:0;font-size:16px;display:inline}
+.count{font-size:12px;color:var(--muted)}
+.row{display:flex;align-items:center;gap:10px;padding:6px 12px;border-top:1px solid var(--line)}
+.row .label{flex:1;min-width:140px}
+.desc{display:block;font-size:12px;color:var(--muted)}
+.col{display:flex;flex-direction:column;align-items:center;gap:3px;width:160px}
+.head .col{font-size:13px;font-weight:500;color:var(--fg)}
+.head select{font-size:12px;padding:2px 4px;font-weight:normal}
+.colmini{display:none;font-size:11px;color:var(--fg);opacity:.85}
+.dots{display:flex;gap:6px}
+.dot{display:inline-block;width:20px;height:20px;padding:0;border-radius:50%;border:2px solid transparent;opacity:.22}
+.dot.on{opacity:1;border-color:var(--fg)}
+.r0{background:var(--r0)}.r1{background:var(--r1)}.r2{background:var(--r2)}
+.r3{background:var(--r3)}.r4{background:var(--r4)}.r5{background:var(--r5)}
+.muted{color:var(--muted)}
+footer{max-width:900px;margin:0 auto;padding:0 16px 30px;font-size:12px}
+#compare h2{margin:16px 0 4px}
+#compare h3{margin:22px 0 6px;font-size:16px}
+.match{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:6px 0}
+.tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:0 6px;margin-left:4px}
+.who{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:4px;font-size:13px}
+.chip{display:inline-block;padding:0 8px;border-radius:10px;color:#fff;font-size:12px}
+@media (max-width:560px){
+  .row{flex-wrap:wrap}.row .label{flex-basis:100%}
+  .col{width:auto;flex:1}.colmini{display:block}.head .label{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">Checklist</h1>
+  <div id="legend"></div>
+  <div class="bar">
+    <input id="myName" placeholder="Your name / handle (optional)" maxlength="40">
+    <button id="btnLinks" class="primary">Get links</button>
+    <button id="btnCompare">Compare</button>
+    <button id="btnExpand">Expand all</button>
+    <button id="btnCollapse">Collapse all</button>
+    <button id="btnClear">Clear my answers</button>
+  </div>
+  <details id="help">
+    <summary>How Compare works</summary>
+    <ul>
+      <li>Fill in your sheet, click <b>Get links</b>, and send the <b>Share link</b> to your partner.</li>
+      <li>Your partner opens it, fills in their own sheet, and clicks <b>Compare</b>. They can send you the <b>Comparison link</b> so you see the same results.</li>
+      <li><b>You both want:</b> both of you chose Favorite, Like, or Interested.</li>
+      <li><b>Worth a conversation:</b> at least one of you chose With discussion, and neither said No.</li>
+      <li>Paired columns match opposite sides: giving with receiving, in charge with following.</li>
+      <li><b>Items left blank count as No.</b> An unanswered item never shows up as a match.</li>
+      <li id="helpPrivacy"></li>
+      <li>Answers are kept in the link and in your browser only. Nothing is sent to a server.</li>
+    </ul>
+  </details>
+  <div id="banner"></div>
+  <div id="links" hidden></div>
+  <div id="warnings"></div>
+</header>
+<main id="sheet"></main>
+<section id="compare" hidden></section>
+<footer id="footer" class="muted"></footer>
+
+<script>
+// ---------------------------------------------------------------
+// Checklist - version 1.0.3
+// Links panel shows Copy buttons only (no text fields), links are
+// built at click time; edit link renamed to backup link; link
+// format v2 adds run-length encoding (v1 links still readable);
+// empty name is left out of links.
+// Edit template.html, not index.html - index.html is generated.
+// ---------------------------------------------------------------
+const APP_VERSION = '1.0.3';
+const LINK_FORMAT = '2';            // format written to new links
+const READABLE_FORMATS = ['1', '2']; // formats this page can read
+
+const CONFIG = {
+  TITLE: 'Our Checklist',
+  // true  = compare view shows only mutual items (default).
+  // false = compare view also lists one-sided items, including "No".
+  HIDE_ONE_SIDED: true,
+  STORAGE_KEY: 'checklist.v2'
+};
+
+// Replaced by build.py with the list data.
+const DATA = /*__CHECKLIST_DATA__*/null;
+
+// Index = stored value. 0 = not entered. Max value 7 (3 bits).
+const RATINGS = ['Not entered', 'Favorite', 'Like', 'Interested', 'With discussion', 'No'];
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+let cats = [];
+let catById = {};
+let maxId = -1;
+let itemCount = 0;
+let mine = { name: '', cells: {} };   // cells: { id*2+col : rating }
+let partner = null;                    // { name, cells }
+
+const $ = id => document.getElementById(id);
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+function warn(msg) { $('warnings').append(el('div', 'warn', msg)); }
+
+// ---------- data ----------
+function loadData() {
+  if (!DATA || !Array.isArray(DATA.cats)) return false;
+  cats = DATA.cats;
+  for (const c of cats) {
+    for (const it of c.items) {
+      maxId = Math.max(maxId, it.id);
+      itemCount++;
+      catById[it.id] = c;
+    }
+  }
+  return true;
+}
+
+// ---------- encoding: one character per item id ----------
+function encodeCells(cells) {
+  let s = '';
+  for (let id = 0; id <= maxId; id++) {
+    s += B64[((cells[id * 2] || 0) << 3) | (cells[id * 2 + 1] || 0)];
+  }
+  return s.replace(/A+$/, '');
+}
+function decodeCells(s) {
+  const cells = {};
+  s = s || '';
+  for (let i = 0; i < s.length; i++) {
+    const v = B64.indexOf(s[i]);
+    if (v < 0) continue;
+    const a = v >> 3, b = v & 7;
+    if (a >= 1 && a <= 5) cells[i * 2] = a;
+    if (b >= 1 && b <= 5) cells[i * 2 + 1] = b;
+  }
+  return cells;
+}
+
+// Run-length encoding: a run of 4..67 identical characters X is
+// written as X . c, where c = B64[runLength - 4]. Shorter runs stay as-is.
+function rleEncode(s) {
+  let out = '';
+  let i = 0;
+  while (i < s.length) {
+    const ch = s[i];
+    let j = i;
+    while (j < s.length && s[j] === ch) j++;
+    let n = j - i;
+    while (n > 0) {
+      if (n >= 4) {
+        const k = Math.min(n, 67);
+        out += ch + '.' + B64[k - 4];
+        n -= k;
+      } else {
+        out += ch.repeat(n);
+        n = 0;
+      }
+    }
+    i = j;
+  }
+  return out;
+}
+function rleDecode(s) {
+  let out = '';
+  s = s || '';
+  for (let i = 0; i < s.length; i++) {
+    if (s[i + 1] === '.') {
+      const k = B64.indexOf(s[i + 2]);
+      out += s[i].repeat(k >= 0 ? k + 4 : 1);
+      i += 2;
+    } else {
+      out += s[i];
+    }
+  }
+  return out;
+}
+
+// Link codes: v1 = plain, v2 = run-length encoded.
+function toLinkCode(cells) { return rleEncode(encodeCells(cells)); }
+function fromLinkCode(code, v) {
+  return decodeCells(v === '1' ? code : rleDecode(code));
+}
+
+// ---------- storage ----------
+function save() {
+  try {
+    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify({
+      name: mine.name, code: encodeCells(mine.cells),
+      partner: partner ? { name: partner.name, code: encodeCells(partner.cells) } : null
+    }));
+  } catch (e) { /* storage unavailable; answers live until page closes */ }
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY) || 'null');
+    if (!d) return;
+    mine = { name: d.name || '', cells: decodeCells(d.code) };
+    if (d.partner) partner = { name: d.partner.name || '', cells: decodeCells(d.partner.code) };
+  } catch (e) { /* ignore */ }
+}
+
+// ---------- sheet ----------
+function updateCount(c) {
+  if (!c._count) return;
+  let n = 0;
+  for (const it of c.items) {
+    if (c.cols.some((_, ci) => mine.cells[it.id * 2 + ci])) n++;
+  }
+  c._count.textContent = `${n} of ${c.items.length} answered`;
+}
+
+function setCell(idx, v) {
+  if (v) mine.cells[idx] = v; else delete mine.cells[idx];
+  const g = document.querySelector(`.dots[data-cell="${idx}"]`);
+  if (g) g.querySelectorAll('.dot').forEach(d => d.classList.toggle('on', +d.dataset.v === v));
+  const c = catById[Math.floor(idx / 2)];
+  if (c) updateCount(c);
+}
+
+function renderSheet() {
+  const root = $('sheet');
+  root.innerHTML = '';
+  for (const c of cats) {
+    const sec = el('details', 'cat');
+    sec.open = !c.closed;
+    const sum = el('summary');
+    sum.append(el('h2', null, c.title));
+    c._count = el('span', 'count');
+    sum.append(c._count);
+    sec.append(sum);
+
+    const head = el('div', 'row head');
+    head.append(el('div', 'label'));
+    c.cols.forEach((col, ci) => {
+      const cell = el('div', 'col');
+      cell.append(el('span', null, col));
+      const sel = document.createElement('select');
+      sel.append(new Option('Set all...', ''));
+      RATINGS.forEach((r, i) => { if (i) sel.append(new Option(r, i)); });
+      sel.append(new Option('Clear all', '0'));
+      sel.onchange = () => {
+        if (sel.value === '') return;
+        const v = +sel.value;
+        c.items.forEach(it => setCell(it.id * 2 + ci, v));
+        sel.value = '';
+        save();
+      };
+      cell.append(sel);
+      head.append(cell);
+    });
+    sec.append(head);
+
+    for (const it of c.items) {
+      const row = el('div', 'row');
+      const lab = el('div', 'label', it.label);
+      if (it.desc) lab.append(el('span', 'desc', it.desc));
+      row.append(lab);
+      c.cols.forEach((col, ci) => {
+        const idx = it.id * 2 + ci;
+        const cell = el('div', 'col');
+        if (c.cols.length > 1) cell.append(el('span', 'colmini', col));
+        const dots = el('div', 'dots');
+        dots.dataset.cell = idx;
+        for (let v = 1; v <= 5; v++) {
+          const b = el('button', 'dot r' + v);
+          b.type = 'button';
+          b.dataset.v = v;
+          b.title = `${col}: ${RATINGS[v]}`;
+          b.setAttribute('aria-label', `${it.label}, ${col}: ${RATINGS[v]}`);
+          if (mine.cells[idx] === v) b.classList.add('on');
+          b.onclick = () => { setCell(idx, mine.cells[idx] === v ? 0 : v); save(); };
+          dots.append(b);
+        }
+        cell.append(dots);
+        row.append(cell);
+      });
+      sec.append(row);
+    }
+    root.append(sec);
+    updateCount(c);
+  }
+}
+
+function setAllOpen(open) {
+  document.querySelectorAll('details.cat').forEach(d => { d.open = open; });
+}
+
+function renderLegend() {
+  const L = $('legend');
+  RATINGS.forEach((r, i) => {
+    if (!i) return;
+    const s = el('span', 'legend-item');
+    s.append(el('span', 'dot on r' + i), r);
+    L.append(s);
+  });
+  L.append(el('span', 'muted', 'Click a dot again to clear it.'));
+}
+
+function showBanner() {
+  const b = $('banner');
+  b.innerHTML = '';
+  if (!partner) return;
+  const n = el('div', 'note');
+  n.append(`${partner.name || 'Your partner'}'s answers are loaded. Fill in yours, then press Compare. `);
+  const x = el('button', null, 'Remove');
+  x.onclick = () => { partner = null; save(); showBanner(); };
+  n.append(x);
+  b.append(n);
+}
+
+// ---------- links ----------
+function linkFor(params) {
+  const p = { v: LINK_FORMAT };
+  for (const [k, val] of Object.entries(params)) if (val) p[k] = val;
+  return location.href.split('#')[0] + '#' + new URLSearchParams(p).toString();
+}
+
+async function copyText(text, btn) {
+  let ok = true;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.append(ta);
+    ta.select();
+    try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+    ta.remove();
+  }
+  if (!ok) { prompt('Copy this link:', text); return; }
+  btn.textContent = 'Copied!';
+  setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+}
+
+function showLinks() {
+  const p = $('links');
+  if (!p.hidden) { p.hidden = true; return; }
+  p.innerHTML = '';
+  // makeUrl runs at click time, so links always reflect current answers.
+  const add = (title, note, makeUrl) => {
+    const box = el('div', 'linkbox');
+    const text = el('div');
+    text.append(el('strong', null, title), el('div', 'muted', note));
+    const btn = el('button', 'primary', 'Copy');
+    btn.onclick = () => copyText(makeUrl(), btn);
+    box.append(text, btn);
+    p.append(box);
+  };
+  add('Share link',
+      'Send to your partner. Your answers load for comparing but stay hidden.',
+      () => linkFor({ p: toLinkCode(mine.cells), pn: mine.name }));
+  add('Save my answers (backup link)',
+      'Keep in Notes or bookmarks. Restores your answers if this browser forgets them ' +
+      '(opened from another app, another device, or after a while on iPhone). ' +
+      'Copy a new one after making changes.',
+      () => linkFor({ e: toLinkCode(mine.cells), en: mine.name }));
+  if (partner) {
+    add('Comparison link',
+        'Opens the comparison of both sheets directly. Send back to your partner.',
+        () => linkFor({ a: toLinkCode(mine.cells), an: mine.name,
+                        b: toLinkCode(partner.cells), bn: partner.name }));
+  }
+  p.hidden = false;
+}
+
+// ---------- compare ----------
+function readPartner(str) {
+  const h = str.includes('#') ? str.slice(str.indexOf('#') + 1) : str;
+  const q = new URLSearchParams(h.trim());
+  const v = q.get('v');
+  if (!READABLE_FORMATS.includes(v) || !q.has('p')) return null;
+  return { name: q.get('pn') || '', cells: fromLinkCode(q.get('p'), v) };
+}
+
+function compare(A, B) {
+  const matches = [], talk = [], other = [];
+  for (const c of cats) {
+    let pairs;
+    if (c.cols.length === 1) pairs = [[0, 0]];
+    else if (c.match === 'cross') pairs = [[0, 1], [1, 0]];
+    else pairs = [[0, 0], [1, 1]];
+    for (const it of c.items) {
+      for (const [ca, cb] of pairs) {
+        const ra = A.cells[it.id * 2 + ca] || 0;
+        const rb = B.cells[it.id * 2 + cb] || 0;
+        const row = { c, it, ca, cb, ra, rb };
+        const yesA = ra >= 1 && ra <= 3, yesB = rb >= 1 && rb <= 3;
+        const okA = ra >= 1 && ra <= 4, okB = rb >= 1 && rb <= 4;
+        if (yesA && yesB) matches.push(row);
+        else if (okA && okB) talk.push(row);
+        else if (ra || rb) other.push(row);
+      }
+    }
+  }
+  const score = x => (x.ra + x.rb) * 10 + Math.min(x.ra, x.rb);
+  matches.sort((x, y) => score(x) - score(y));
+  talk.sort((x, y) => score(x) - score(y));
+  return { matches, talk, other };
+}
+
+function personLine(name, role, r) {
+  const s = el('span');
+  s.append(`${name}${role ? ' (' + role.toLowerCase() + ')' : ''}: `);
+  s.append(el('span', 'chip r' + r, RATINGS[r]));
+  return s;
+}
+
+function showCompare(A, B) {
+  const r = compare(A, B);
+  const sec = $('compare');
+  sec.innerHTML = '';
+  sec.append(el('h2', null, `${A.name} & ${B.name}`));
+  const back = el('button', null, 'Back to my sheet');
+  back.onclick = hideCompare;
+  sec.append(back);
+
+  const section = (title, rows, empty) => {
+    sec.append(el('h3', null, `${title} (${rows.length})`));
+    if (!rows.length) { sec.append(el('p', 'muted', empty)); return; }
+    for (const x of rows) {
+      const d = el('div', 'match');
+      const top = el('div');
+      top.append(el('strong', null, x.it.label), el('span', 'tag', x.c.title));
+      d.append(top);
+      const two = x.c.cols.length > 1;
+      const who = el('div', 'who');
+      who.append(personLine(A.name, two ? x.c.cols[x.ca] : '', x.ra),
+                 personLine(B.name, two ? x.c.cols[x.cb] : '', x.rb));
+      d.append(who);
+      sec.append(d);
+    }
+  };
+  section('You both want', r.matches, 'Nothing mutual yet.');
+  section('Worth a conversation', r.talk, 'None.');
+  if (CONFIG.HIDE_ONE_SIDED) sec.append(el('p', 'muted', 'Items that are not mutual (including blanks) are hidden.'));
+  else section('Not mutual', r.other, 'None.');
+
+  $('sheet').hidden = true;
+  $('links').hidden = true;
+  sec.hidden = false;
+  window.scrollTo(0, 0);
+}
+
+function hideCompare() {
+  $('compare').hidden = true;
+  $('sheet').hidden = false;
+  history.replaceState(null, '', location.pathname + location.search);
+}
+
+function onCompare() {
+  if (!partner) {
+    const s = prompt("Paste your partner's share link:");
+    if (!s) return;
+    const P = readPartner(s);
+    if (!P) { alert("That doesn't look like a current share link."); return; }
+    partner = P;
+    save();
+    showBanner();
+  }
+  showCompare({ name: mine.name || 'You', cells: mine.cells },
+              { name: partner.name || 'Partner', cells: partner.cells });
+}
+
+// ---------- start ----------
+function init() {
+  document.title = CONFIG.TITLE;
+  $('title').textContent = CONFIG.TITLE;
+  $('helpPrivacy').textContent = CONFIG.HIDE_ONE_SIDED
+    ? "Items that aren't mutual are never shown, so neither of you sees what the other declined."
+    : "Items that aren't mutual are listed at the bottom of the comparison.";
+  renderLegend();
+
+  if (!loadData()) {
+    warn('No list data found. Run "python build.py" and open the generated index.html.');
+    return;
+  }
+
+  load();
+  const q = new URLSearchParams(location.hash.slice(1));
+  const v = q.get('v');
+  const hasLink = q.has('e') || q.has('p') || q.has('a');
+  const linkOk = READABLE_FORMATS.includes(v);
+  if (hasLink && !linkOk) warn("This link was made by an older version of the page and can't be read.");
+
+  if (linkOk && q.has('e')) {
+    const incoming = fromLinkCode(q.get('e'), v);
+    const hasLocal = Object.keys(mine.cells).length > 0;
+    const same = encodeCells(incoming) === encodeCells(mine.cells);
+    if (!hasLocal || same || confirm('Replace the answers saved in this browser with the ones in this link?')) {
+      mine = { name: q.get('en') || mine.name, cells: incoming };
+    }
+  }
+  if (linkOk && q.has('p')) partner = { name: q.get('pn') || '', cells: fromLinkCode(q.get('p'), v) };
+  if (q.has('e') || q.has('p')) history.replaceState(null, '', location.pathname + location.search);
+  save();
+
+  $('myName').value = mine.name;
+  $('myName').oninput = e => { mine.name = e.target.value.trim(); save(); };
+  $('btnLinks').onclick = showLinks;
+  $('btnCompare').onclick = onCompare;
+  $('btnExpand').onclick = () => setAllOpen(true);
+  $('btnCollapse').onclick = () => setAllOpen(false);
+  $('btnClear').onclick = () => {
+    if (!confirm('Clear all of your answers?')) return;
+    mine.cells = {};
+    save();
+    renderSheet();
+  };
+
+  renderSheet();
+  showBanner();
+  $('footer').textContent = `v${APP_VERSION} - ${itemCount} items - list built ${DATA.built || '?'}`;
+
+  if (linkOk && q.has('a') && q.has('b')) {
+    showCompare({ name: q.get('an') || 'Person A', cells: fromLinkCode(q.get('a'), v) },
+                { name: q.get('bn') || 'Person B', cells: fromLinkCode(q.get('b'), v) });
+  }
+}
+init();
+</script>
+</body>
+</html>
